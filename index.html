@@ -1,149 +1,193 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BondhuChat</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #ECE5DD; }
-    .container { max-width: 500px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
-    .logo { font-size: 32px; font-weight: bold; color: #075E54; text-align: center; margin: 100px 0 40px 0; }
-    .input { background: white; padding: 15px; border-radius: 10px; margin: 0 20px 15px 20px; font-size: 16px; border: none; outline: none; }
-    .button { background: #25D366; padding: 15px; border-radius: 10px; margin: 10px 20px; border: none; color: white; font-size: 18px; font-weight: bold; }
-    .switch { color: #075E54; text-align: center; margin-top: 20px; font-size: 16px; background: none; border: none; }
-    .header { display: flex; justify-content: space-between; align-items: center; background: #075E54; padding: 15px; color: white; }
-    .headerText { font-size: 20px; font-weight: bold; }
-    .logout { background: none; border: none; color: white; font-size: 16px; }
-    .messages { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; }
-    .messageBox { margin: 4px 10px; padding: 10px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
-    .myMessage { background: #DCF8C6; align-self: flex-end; }
-    .otherMessage { background: white; align-self: flex-start; }
-    .userName { font-size: 12px; color: #075E54; font-weight: bold; margin-bottom: 2px; }
-    .inputRow { display: flex; padding: 10px; background: #F0F0F0; }
-    .messageInput { flex: 1; background: white; border-radius: 25px; padding: 10px 15px; margin-right: 10px; border: none; outline: none; }
-    .sendButton { background: #25D366; border-radius: 25px; padding: 0 20px; border: none; color: white; font-weight: bold; }
+    * {margin:0; padding:0; box-sizing:border-box; font-family:sans-serif}
+    body {background:#111; color:#fff; height:100vh; display:flex}
+    #users {width:35%; background:#1f1f1f; border-right:1px solid #333; overflow-y:auto}
+    #chat {width:65%; display:flex; flex-direction:column}
+    .user {padding:15px; border-bottom:1px solid #333; cursor:pointer}
+    .user:hover {background:#2a2a2a}
+    .active {background:#075E54 !important}
+    #messages {flex:1; padding:10px; overflow-y:auto; background:#0d1418}
+    .msg {margin:8px 0; padding:8px 12px; border-radius:8px; max-width:75%; word-wrap:break-word}
+    .me {background:#005C4B; margin-left:auto}
+    .other {background:#202C33}
+    #input-area {display:flex; padding:10px; background:#1f1f1f}
+    #msg-input {flex:1; padding:10px; border:none; border-radius:20px; background:#2a2a2a; color:#fff}
+    #send-btn {margin-left:10px; padding:10px 15px; border:none; border-radius:20px; background:#00A884; color:#fff}
+    #login {position:fixed; inset:0; background:#111; display:flex; align-items:center; justify-content:center; z-index:99}
+    .login-box {background:#1f1f1f; padding:30px; border-radius:10px; width:90%; max-width:300px}
+    .login-box h2 {text-align:center; margin-bottom:20px; color:#00A884}
+    .login-box input {width:100%; padding:12px; margin:8px 0; border:none; border-radius:5px; background:#2a2a2a; color:#fff}
+    .login-box button {width:100%; padding:12px; margin-top:10px; border:none; border-radius:5px; background:#00A884; color:#fff; font-weight:bold; cursor:pointer}
+    .btn-secondary {background:#2a2a2a !important}
+    #header {padding:15px; background:#202C33; border-bottom:1px solid #333; font-weight:bold}
+    #logout {float:right; background:#ff3b30; border:none; color:#fff; padding:5px 10px; border-radius:5px; cursor:pointer}
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="login">
+    <div class="login-box">
+      <h2>BondhuChat</h2>
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="signUp()">Sign Up</button>
+      <button onclick="signIn()">Login</button>
+      <button class="btn-secondary" onclick="resetPassword()">Forgot Password?</button>
+    </div>
+  </div>
 
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js'
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js'
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js'
-    
-    window.firebase = { initializeApp, getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp };
-  </script>
+  <div id="users"></div>
+  <div id="chat">
+    <div id="header">
+      <span id="chat-with">Select a friend to chat</span>
+      <button id="logout" onclick="logout()">Logout</button>
+    </div>
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="msg-input" placeholder="Type a message" disabled>
+      <button id="send-btn" onclick="sendMsg()" disabled>Send</button>
+    </div>
+  </div>
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-    const { initializeApp, getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } = window.firebase;
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // তোমার Firebase Config - আমি বসায় দিছি
-    const firebaseConfig = {
-      apiKey: "AIzaSyD57GxxAkFYrJGGQhugOZwLF70c6AMspTA",
-      authDomain: "bondhuchat-11204.firebaseapp.com",
-      databaseURL: "https://bondhuchat-11204-default-rtdb.firebaseio.com",
-      projectId: "bondhuchat-11204",
-      storageBucket: "bondhuchat-11204.firebasestorage.app",
-      messagingSenderId: "1034176832315",
-      appId: "1:1034176832315:web:954dc0d5228a8be6608d1e",
-      measurementId: "G-S55BV8VFZ8"
-    };
+  // 🔥 তোমার আসল Firebase Config এখানে বসাও 🔥
+  const firebaseConfig = {
+    apiKey: "AIzaSy...",
+    authDomain: "bondhuchat-11204.firebaseapp.com",
+    projectId: "bondhuchat-11204",
+    storageBucket: "bondhuchat-11204.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abc123"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  
+  let currentUser = null;
+  let selectedUser = null;
+  let chatId = null;
+  let unsubscribe = null;
 
-    function App() {
-      const [user, setUser] = useState(null);
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [message, setMessage] = useState('');
-      const [messages, setMessages] = useState([]);
-      const [isLogin, setIsLogin] = useState(true);
+  window.signUp = async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    if (!email || !password) return alert('Email Password দাও');
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", userCred.user.uid), {
+        email: email,
+        uid: userCred.user.uid
+      });
+    } catch(e) { alert(e.message) }
+  }
 
-      useEffect(() => {
-        const unsubAuth = onAuthStateChanged(auth, (user) => setUser(user));
-        const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
-        const unsubMsg = onSnapshot(q, (snap) => {
-          setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        });
-        return () => { unsubAuth(); unsubMsg(); };
-      }, []);
+  window.signIn = async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    if (!email || !password) return alert('Email Password দাও');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch(e) { alert(e.message) }
+  }
 
-      const handleAuth = async () => {
-        if (!email || !password) return alert('Email Password দেও');
-        try {
-          if (isLogin) {
-            await signInWithEmailAndPassword(auth, email, password);
-          } else {
-            await createUserWithEmailAndPassword(auth, email, password);
-          }
-        } catch (error) {
-          alert(error.message);
-        }
-      };
+  window.resetPassword = async () => {
+    const email = document.getElementById('email').value;
+    if (!email) return alert('Email লিখো আগে');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert('Password Reset লিংক তোমার Email এ গেছে। Spam ফোল্ডারও চেক করো');
+    } catch(e) { alert(e.message) }
+  }
 
-      const sendMessage = async () => {
-        if (message.trim() === '') return;
-        await addDoc(collection(db, 'messages'), {
-          text: message,
-          createdAt: serverTimestamp(),
-          user: user.email,
-        });
-        setMessage('');
-      };
+  window.logout = () => signOut(auth);
 
-      if (!user) {
-        return (
-          <div className="container">
-            <h1 className="logo">BondhuChat 💚</h1>
-            <input className="input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-            <input className="input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-            <button className="button" onClick={handleAuth}>{isLogin ? 'Login' : 'Sign Up'}</button>
-            <button className="switch" onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? 'নতুন অ্যাকাউন্ট খুলো' : 'Login করো'}
-            </button>
-          </div>
-        );
-      }
-
-      return (
-        <div className="container">
-          <div className="header">
-            <span className="headerText">BondhuChat</span>
-            <button className="logout" onClick={() => signOut(auth)}>Logout</button>
-          </div>
-          
-          <div className="messages">
-            {messages.map(item => (
-              <div key={item.id} className={`messageBox ${item.user === user.email ? 'myMessage' : 'otherMessage'}`}>
-                <div className="userName">{item.user}</div>
-                <div>{item.text}</div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="inputRow">
-            <input 
-              className="messageInput" 
-              placeholder="মেসেজ লিখো..." 
-              value={message} 
-              onChange={e => setMessage(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && sendMessage()}
-            />
-            <button className="sendButton" onClick={sendMessage}>Send</button>
-          </div>
-        </div>
-      );
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('login').style.display = 'none';
+      loadUsers();
+    } else {
+      document.getElementById('login').style.display = 'flex';
+      if (unsubscribe) unsubscribe();
     }
+  });
 
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
+  async function loadUsers() {
+    const usersDiv = document.getElementById('users');
+    const querySnapshot = await getDocs(collection(db, "users"));
+    usersDiv.innerHTML = '<div style="padding:15px; font-weight:bold; border-bottom:1px solid #333">Friends</div>';
+    querySnapshot.forEach((doc) => {
+      const user = doc.data();
+      if (user.uid !== currentUser.uid) {
+        const div = document.createElement('div');
+        div.className = 'user';
+        div.textContent = user.email;
+        div.onclick = (e) => selectUser(user, e.target);
+        usersDiv.appendChild(div);
+      }
+    });
+  }
+
+  function selectUser(user, element) {
+    selectedUser = user;
+    document.querySelectorAll('.user').forEach(u => u.classList.remove('active'));
+    element.classList.add('active');
+    document.getElementById('chat-with').textContent = user.email;
+    document.getElementById('msg-input').disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    
+    chatId = currentUser.uid < user.uid ? 
+      currentUser.uid + '_' + user.uid : 
+      user.uid + '_' + currentUser.uid;
+    
+    loadMessages();
+  }
+
+  function loadMessages() {
+    if (unsubscribe) unsubscribe();
+    const messagesDiv = document.getElementById('messages');
+    messagesDiv.innerHTML = '';
+    
+    const q = query(collection(db, "chats", chatId, "messages"), orderBy("time"));
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      messagesDiv.innerHTML = '';
+      snapshot.forEach((doc) => {
+        const msg = doc.data();
+        const div = document.createElement('div');
+        div.className = 'msg ' + (msg.uid === currentUser.uid ? 'me' : 'other');
+        div.textContent = msg.text;
+        messagesDiv.appendChild(div);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  }
+
+  window.sendMsg = async () => {
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (!text || !chatId) return;
+    
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      text: text,
+      uid: currentUser.uid,
+      email: currentUser.email,
+      time: serverTimestamp()
+    });
+    input.value = '';
+  }
+
+  document.getElementById('msg-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMsg();
+  });
+</script>
 </body>
 </html>
