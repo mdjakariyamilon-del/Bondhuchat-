@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BondhuChat</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #ECE5DD; }
+    .container { max-width: 500px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
+    .logo { font-size: 32px; font-weight: bold; color: #075E54; text-align: center; margin: 100px 0 40px 0; }
+    .input { background: white; padding: 15px; border-radius: 10px; margin: 0 20px 15px 20px; font-size: 16px; border: none; outline: none; }
+    .button { background: #25D366; padding: 15px; border-radius: 10px; margin: 10px 20px; border: none; color: white; font-size: 18px; font-weight: bold; }
+    .switch { color: #075E54; text-align: center; margin-top: 20px; font-size: 16px; background: none; border: none; }
+    .header { display: flex; justify-content: space-between; align-items: center; background: #075E54; padding: 15px; color: white; }
+    .headerText { font-size: 20px; font-weight: bold; }
+    .logout { background: none; border: none; color: white; font-size: 16px; }
+    .messages { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; }
+    .messageBox { margin: 4px 10px; padding: 10px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
+    .myMessage { background: #DCF8C6; align-self: flex-end; }
+    .otherMessage { background: white; align-self: flex-start; }
+    .userName { font-size: 12px; color: #075E54; font-weight: bold; margin-bottom: 2px; }
+    .inputRow { display: flex; padding: 10px; background: #F0F0F0; }
+    .messageInput { flex: 1; background: white; border-radius: 25px; padding: 10px 15px; margin-right: 10px; border: none; outline: none; }
+    .sendButton { background: #25D366; border-radius: 25px; padding: 0 20px; border: none; color: white; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js'
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js'
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js'
+    
+    window.firebase = { initializeApp, getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp };
+  </script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { initializeApp, getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } = window.firebase;
+
+    // তোমার Firebase Config - আমি বসায় দিছি
+    const firebaseConfig = {
+      apiKey: "AIzaSyD57GxxAkFYrJGGQhugOZwLF70c6AMspTA",
+      authDomain: "bondhuchat-11204.firebaseapp.com",
+      databaseURL: "https://bondhuchat-11204-default-rtdb.firebaseio.com",
+      projectId: "bondhuchat-11204",
+      storageBucket: "bondhuchat-11204.firebasestorage.app",
+      messagingSenderId: "1034176832315",
+      appId: "1:1034176832315:web:954dc0d5228a8be6608d1e",
+      measurementId: "G-S55BV8VFZ8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    function App() {
+      const [user, setUser] = useState(null);
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [message, setMessage] = useState('');
+      const [messages, setMessages] = useState([]);
+      const [isLogin, setIsLogin] = useState(true);
+
+      useEffect(() => {
+        const unsubAuth = onAuthStateChanged(auth, (user) => setUser(user));
+        const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+        const unsubMsg = onSnapshot(q, (snap) => {
+          setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        return () => { unsubAuth(); unsubMsg(); };
+      }, []);
+
+      const handleAuth = async () => {
+        if (!email || !password) return alert('Email Password দেও');
+        try {
+          if (isLogin) {
+            await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+          }
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+
+      const sendMessage = async () => {
+        if (message.trim() === '') return;
+        await addDoc(collection(db, 'messages'), {
+          text: message,
+          createdAt: serverTimestamp(),
+          user: user.email,
+        });
+        setMessage('');
+      };
+
+      if (!user) {
+        return (
+          <div className="container">
+            <h1 className="logo">BondhuChat 💚</h1>
+            <input className="input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+            <input className="input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+            <button className="button" onClick={handleAuth}>{isLogin ? 'Login' : 'Sign Up'}</button>
+            <button className="switch" onClick={() => setIsLogin(!isLogin)}>
+              {isLogin ? 'নতুন অ্যাকাউন্ট খুলো' : 'Login করো'}
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="container">
+          <div className="header">
+            <span className="headerText">BondhuChat</span>
+            <button className="logout" onClick={() => signOut(auth)}>Logout</button>
+          </div>
+          
+          <div className="messages">
+            {messages.map(item => (
+              <div key={item.id} className={`messageBox ${item.user === user.email ? 'myMessage' : 'otherMessage'}`}>
+                <div className="userName">{item.user}</div>
+                <div>{item.text}</div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="inputRow">
+            <input 
+              className="messageInput" 
+              placeholder="মেসেজ লিখো..." 
+              value={message} 
+              onChange={e => setMessage(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && sendMessage()}
+            />
+            <button className="sendButton" onClick={sendMessage}>Send</button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
