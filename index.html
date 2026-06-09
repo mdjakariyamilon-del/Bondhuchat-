@@ -58,21 +58,19 @@
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 🔥 তোমার আসল Firebase Config এখানে বসাও 🔥
   const firebaseConfig = {
-    apiKey: "AIzaSy...",
+    apiKey: "AIzaSyD57GxxAkFYrJGGQhugOZwLF70c6AMspTA",
     authDomain: "bondhuchat-11204.firebaseapp.com",
     projectId: "bondhuchat-11204",
-    storageBucket: "bondhuchat-11204.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abc123"
+    storageBucket: "bondhuchat-11204.firebasestorage.app",
+    messagingSenderId: "1034176832315",
+    appId: "1:1034176832315:web:954dc0d5228a8be6608d1e"
   };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
   
-  // এই লাইনটা বারবার Login লাগার বাগ ফিক্স করবে
   setPersistence(auth, browserLocalPersistence);
   
   let currentUser = null;
